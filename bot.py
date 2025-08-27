@@ -150,29 +150,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🤖 <b>Aide - Bot Anime</b>\n\n"
-        "🔍 <b>Recherche d'animes />\b>\n"
+        "🔍 <b>Recherche d'animes :</b>\n"
         "• <code>/anime <nom></code>\n\n"
-        "📅 <b>Recherche par saison />\b>\n"
+        "📅 <b>Recherche par saison :</b>\n"
         "• <code>/saison <année> <saison></code> (spring, summer, fall, winter)\n"
         "• ex : <code>/saison 2023 fall</code>\n\n"
-        "👤 <b>Recherche de personnages />\b>\n"
+        "👤 <b>Recherche de personnages :</b>\n"
         "• <code>/personnage <nom></code>\n"
         "• ex : <code>/personnage Naruto</code>\n\n"
-        "🏆 <b>Top animes />\b>\n"
+        "🏆 <b>Top animes :</b>\n"
         "• <code>/top</code> - Liste des meilleurs animes du moments\n\n"
-        "🎲 <b>Anime aléatoire />\b>\n"
+        "🎲 <b>Anime aléatoire :</b>\n"
         "• <code>/random</code> - Découvrir un anime au hasard\n\n"
-        "📅 <b>Planning des sorties />\b>\n"
+        "📅 <b>Planning des sorties :</b>\n"
         "• <code>/planing</code> - Voir les sorties de la semaine\n"
         "• Cliquez sur un jour pour voir les animes du jour\n\n"
-        "👤 <b>Profil utilisateur />\b>\n"
+        "👤 <b>Profil utilisateur :</b>\n"
         "• <code>/profil</code> - Gérer vos listes et voir vos stats\n\n"
-        "❤️ <b>Favoris />\b>\n"
+        "❤️ <b>Favoris :</b>\n"
         "• Cliquez sur le bouton ❤️ Favoris sur une fiche anime\n"
         "• Consultez vos favoris via /profil\n\n"
-        "🎯 <b>Navigation interactive />\b>\n"
+        "🎯 <b>Navigation interactive :</b>\n"
         "• Synopsis, Détails, Studio, Trailer, Personnages, Similaires, Streaming\n"
-        "👥 <b>Groupes />\b>\n"
+        "👥 <b>Groupes :</b>\n"
         "• Mentionne-moi puis écris le nom de l'anime"
     )
     await update.message.reply_text(help_text, parse_mode="HTML")
@@ -421,11 +421,11 @@ async def anime_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = response.json()
         anime = data.get('data', {})
         if not anime:
-            await query.edit_message_text("🚫 Anime introuvable.")
+            await query.answer("🚫 Anime introuvable.")
             return
         await send_anime_card(query, context, anime)
     except Exception as e:
-        await query.edit_message_text("❌ Erreur lors de la récupération de l'anime.")
+        await query.answer("❌ Erreur lors de la récupération de l'anime.")
 
 async def synopsis_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -436,13 +436,22 @@ async def synopsis_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = response.json()
         anime = data.get('data', {})
         if not anime:
-            await query.edit_message_text("🚫 Anime introuvable.")
+            await query.answer("🚫 Anime introuvable.")
             return
         synopsis = translate_text(anime.get('synopsis', 'Aucun synopsis disponible.'))
+        
+        # Tronquer si trop long (4000 caractères max)
+        if len(synopsis) > 4000:
+            synopsis = synopsis[:4000] + "... (tronqué)"
+        
         text = f"📖 *Synopsis de {anime['title']}* :\n\n{synopsis}"
-        await query.edit_message_text(text, parse_mode="Markdown")
+        
+        try:
+            await query.edit_message_text(text, parse_mode="Markdown", disable_web_page_preview=True)
+        except Exception:
+            await query.message.reply_text(text, parse_mode="Markdown", disable_web_page_preview=True)
     except Exception as e:
-        await query.edit_message_text("❌ Erreur lors de la récupération du synopsis.")
+        await query.answer("❌ Erreur lors de la récupération du synopsis.")
 
 async def trailer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -453,15 +462,20 @@ async def trailer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = response.json()
         anime = data.get('data', {})
         if not anime:
-            await query.edit_message_text("🚫 Anime introuvable.")
+            await query.answer("🚫 Anime introuvable.")
             return
         trailer = anime.get('trailer', {}).get('url', '#')
         if trailer != '#':
-            await query.edit_message_text(f"🎥 [Trailer officiel]({trailer})", parse_mode="Markdown")
+            text = f"🎥 [Trailer officiel]({trailer})"
         else:
-            await query.edit_message_text("⚠️ Aucun trailer disponible.")
+            text = "⚠️ Aucun trailer disponible."
+        
+        try:
+            await query.edit_message_text(text, parse_mode="Markdown")
+        except Exception:
+            await query.message.reply_text(text, parse_mode="Markdown")
     except Exception as e:
-        await query.edit_message_text("❌ Erreur lors de la récupération du trailer.")
+        await query.answer("❌ Erreur lors de la récupération du trailer.")
 
 # === Main ===
 
