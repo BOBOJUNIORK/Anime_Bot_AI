@@ -1,5 +1,4 @@
 python-telegram-bot
 requests
-jikanpy
 deep_translator
 python-dotenv
